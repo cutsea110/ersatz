@@ -31,7 +31,7 @@ import qualified Data.ByteString.Char8 as B
 import Data.List ( foldl' )
 
 data SolutionFormat = Minisat
-                    | SATCompetition
+                    | Cryptominisat
                     deriving (Show, Read, Eq)
 
 -- | 'Solver' for 'SAT' problems that tries to invoke the @minisat@ executable from the @PATH@
@@ -40,7 +40,7 @@ minisat = minisatPath (parseSolution Minisat) "minisat"
 
 -- | 'Solver' for 'SAT' problems that tries to invoke the @cryptominisat@ executable from the @PATH@
 cryptominisat :: MonadIO m => Solver SAT m
-cryptominisat = minisatPath (parseSolution SATCompetition) "cryptominisat5"
+cryptominisat = minisatPath (parseSolution Cryptominisat) "cryptominisat5"
 
 -- | 'Solver' for 'SAT' problems that tries to invoke a program that takes @minisat@ compatible arguments.
 --
@@ -72,7 +72,7 @@ parseSolution Minisat s =
                             in  if 0 == v then m else IntMap.insert (abs v) (v>0) m
                  ) IntMap.empty ys
     _ -> IntMap.empty -- WRONG (should be Nothing)
-parseSolution SATCompetition s = go [] $ B.lines s
+parseSolution Cryptominisat s = go [] $ B.lines s
   where
     go xs (y:ys)
       | "c " `B.isPrefixOf` y = go xs ys
