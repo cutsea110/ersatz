@@ -32,17 +32,17 @@ import Data.List ( foldl' )
 
 -- | 'Solver' for 'SAT' problems that tries to invoke the @minisat@ executable from the @PATH@
 minisat :: MonadIO m => Solver SAT m
-minisat = minisatPath "minisat"
+minisat = minisatPath parseSolution "minisat"
 
 -- | 'Solver' for 'SAT' problems that tries to invoke the @cryptominisat@ executable from the @PATH@
 cryptominisat :: MonadIO m => Solver SAT m
-cryptominisat = minisatPath "cryptominisat"
+cryptominisat = minisatPath parseSolution "cryptominisat"
 
 -- | 'Solver' for 'SAT' problems that tries to invoke a program that takes @minisat@ compatible arguments.
 --
 -- The 'FilePath' refers to the path to the executable.
-minisatPath :: MonadIO m => FilePath -> Solver SAT m
-minisatPath path problem = liftIO $
+minisatPath :: MonadIO m => (B.ByteString -> IntMap Bool) -> FilePath -> Solver SAT m
+minisatPath parser path problem = liftIO $
   withTempFiles ".cnf" "" $ \problemPath solutionPath -> do
     withFile problemPath WriteMode $ \fh ->
       hPutBuilder fh (dimacs problem)
@@ -50,12 +50,12 @@ minisatPath path problem = liftIO $
     (exit, _out, _err) <-
       readProcessWithExitCode path [problemPath, solutionPath] []
 
-    sol <- parseSolutionFile solutionPath
+    sol <- parseSolutionFile parser solutionPath
 
     return (resultOf exit, sol)
 
-parseSolutionFile :: FilePath -> IO (IntMap Bool)
-parseSolutionFile path = handle handler (parseSolution <$> B.readFile path)
+parseSolutionFile :: (B.ByteString -> IntMap Bool) -> FilePath -> IO (IntMap Bool)
+parseSolutionFile parser path = handle handler (parser <$> B.readFile path)
   where
     handler :: IOException -> IO (IntMap Bool)
     handler _ = return IntMap.empty
