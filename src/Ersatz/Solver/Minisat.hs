@@ -32,11 +32,11 @@ import Data.List ( foldl' )
 
 -- | 'Solver' for 'SAT' problems that tries to invoke the @minisat@ executable from the @PATH@
 minisat :: MonadIO m => Solver SAT m
-minisat = minisatPath parseSolution "minisat"
+minisat = minisatPath parseMinisatSolution "minisat"
 
 -- | 'Solver' for 'SAT' problems that tries to invoke the @cryptominisat@ executable from the @PATH@
 cryptominisat :: MonadIO m => Solver SAT m
-cryptominisat = minisatPath parseSolution "cryptominisat"
+cryptominisat = minisatPath parseMinisatSolution "cryptominisat"
 
 -- | 'Solver' for 'SAT' problems that tries to invoke a program that takes @minisat@ compatible arguments.
 --
@@ -60,8 +60,8 @@ parseSolutionFile parser path = handle handler (parser <$> B.readFile path)
     handler :: IOException -> IO (IntMap Bool)
     handler _ = return IntMap.empty
 
-parseSolution :: B.ByteString -> IntMap Bool
-parseSolution s =
+parseMinisatSolution :: B.ByteString -> IntMap Bool
+parseMinisatSolution s =
   case B.words s of
     x : ys | x == "SAT" ->
           foldl' ( \ m y -> let Just (v,_) = B.readInt y
