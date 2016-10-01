@@ -14,6 +14,8 @@ module Ersatz.Solver.Minisat
   ( minisat
   , cryptominisat
   , minisatPath
+  , parseSolution
+  , SolutionFormat(..)
   ) where
 
 import Data.ByteString.Builder
