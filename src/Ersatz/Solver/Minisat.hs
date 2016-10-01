@@ -52,16 +52,46 @@ minisatPath parser path problem = liftIO $
   withTempFiles ".cnf" "" $ \problemPath solutionPath -> do
     withFile problemPath WriteMode $ \fh ->
       hPutBuilder fh (dimacs problem)
-
+{-
+    liftIO $ do
+      putStr "problemPath: "
+      putStrLn solutionPath
+      putStr "solutionPath: "
+      putStrLn solutionPath
+-}
     (exit, _out, _err) <-
       readProcessWithExitCode path [problemPath, solutionPath] []
 
+    writeFile solutionPath _out
+{-
+    liftIO $ do
+      putStr "exit: "
+      putStrLn $ show exit
+      putStr "_out: "
+      putStrLn $ show _out
+      putStr "_err: "
+      putStrLn $ show _err
+-}
     sol <- parseSolutionFile parser solutionPath
 
     return (resultOf exit, sol)
 
 parseSolutionFile :: (B.ByteString -> IntMap Bool) -> FilePath -> IO (IntMap Bool)
-parseSolutionFile parser path = handle handler (parser <$> B.readFile path)
+parseSolutionFile parser path = do
+{-
+  putStrLn "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+  bs <- B.readFile path
+  B.putStr bs
+  B.writeFile "solution.out" bs
+  putStrLn "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+-}
+  ans <- handle handler (parser <$> B.readFile path)
+{-
+  putStrLn "**************************************"
+  putStrLn $ show ans
+  putStrLn "**************************************"
+-}
+  return ans
   where
     handler :: IOException -> IO (IntMap Bool)
     handler _ = return IntMap.empty
